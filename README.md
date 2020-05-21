@@ -22,14 +22,17 @@
 
 ### Api gateway
 - [Api Gateway mapping template](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html)
+- [Request validator](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-request-validation.html)
+
 
 - [API Gateway - DynamoDB proxy](https://aws.amazon.com/blogs/compute/using-amazon-api-gateway-as-a-proxy-for-dynamodb/)
 - [Enable CloudWatch log](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html)
+- [JSON schema](http://json-schema.org/understanding-json-schema/)
 
 ### SNS
 - [Publish message](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SNS.html#publish-property)
 - [Setting SMS messaging preferences using the AWS Management Console](https://docs.aws.amazon.com/sns/latest/dg/sms_preferences.html)
-`this is just for reference, what you really need to do in order to change yous spend limit rate is described on the video below`
+    `this is just for reference, what you really need to do in order to change yous spend limit rate is described on the video below`
     - [How do I request a spending limit increase for SMS messages in Amazon SNS?](https://www.youtube.com/watch?v=LUW_9WN6QD0)
 
 
