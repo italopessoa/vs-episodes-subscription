@@ -8,3 +8,6 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html
 https://docs.aws.amazon.com/sns/latest/dg/sms_preferences.html
 
 https://aws.amazon.com/blogs/compute/using-amazon-api-gateway-as-a-proxy-for-dynamodb/
+
+https://www.youtube.com/watch?v=LUW_9WN6QD0
+https://www.youtube.com/watch?v=5-HdLf_lizI
