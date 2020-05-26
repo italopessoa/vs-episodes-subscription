@@ -1,15 +1,15 @@
 # Viking do Sertao - Episodes subscription
 
-- [ ] APi Gateway
-    - [ ] Subscribe using phone number
-        - [ ] Validate phone number format
-        - [ ] Integrate with DynamoDB table (PutItem) and create new item
-    - [ ] Enpoint to receive subscription confirmation code
-    - [ ] Enpoint to remove subscription (DeleteItem)
+- [ ] API Gateway
+    - [x] Subscribe using phone number
+        - [x] Validate phone number format
+        - [x] Integrate with DynamoDB table (PutItem) and create new item
+    - [x] Enpoint to receive subscription confirmation code
+    - [x] Enpoint to remove subscription (DeleteItem)
 - [ ] Lambda
-    - [ ] DynamoDB trigger
-        - [ ] Generate unique code and send an SMS message (SNS publish) to confirm subscription
-    - [ ] Receive subscription confirmation (API Gatweway). Subscribe phone number to (SNS topic)
+    - [x] DynamoDB trigger
+        - [x] Generate unique code and send an SMS message (SNS publish) to confirm subscription
+    - [x] Receive subscription confirmation (API Gatweway). Subscribe phone number to (SNS topic)
     - [ ] Using (CloudWatch events) check podcast rss for new spisodes and publish message to SNS. 
 
 
