@@ -73,8 +73,8 @@ const updateListenerVerificationCode = async (phoneNumber, verificationCode, exp
     const updateExpression = "set code=:code, isActive= :isActive, expiresAt = :expiresAt";
     const expressionAttributeValues = {
         ":code": verificationCode,
-        ":isActive": false,
-        ":expiresAt": expireDate,
+        ":isActive": false,//TODO: remove it, not used
+        ":expiresAt": expireDate,//TODO: remove it, not used
     };
 
     await updateListenerItem(phoneNumber, updateExpression, expressionAttributeValues);

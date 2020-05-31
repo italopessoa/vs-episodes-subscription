@@ -1,5 +1,6 @@
 var AWS = require("aws-sdk");
 var sns = new AWS.SNS();
+const topicArn = "";
 
 //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SNS.html#publish-property
 const sendNotificationMessage = async (phoneNumber, verificationCode) => {
@@ -30,8 +31,7 @@ const subscribe = async (phoneNumber) => {
     console.log("config subscription request params");
     var params = {
         Protocol: 'sms',
-        TopicArn: '',
-        
+        TopicArn: topicArn,
         Endpoint: phoneNumber,
         ReturnSubscriptionArn: true
     };
