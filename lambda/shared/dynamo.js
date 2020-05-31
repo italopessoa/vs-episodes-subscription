@@ -1,9 +1,9 @@
 var AWS = require("aws-sdk");
 var dynamodb = new AWS.DynamoDB.DocumentClient();
-var table = 'testetrigger';
+var table = process.env.AUDIENCE_TABLE;
 
 const updateListenerItem = async (phoneNumber, updateExpression, expressionAttributeValues) => {
-    console.log(`preparing update params for listener ${phoneNumber}`);
+    console.log(`[updateListenerItem] preparing update params for listener ${phoneNumber}`);
     var params = {
         TableName: table,
         Key: {
@@ -69,7 +69,7 @@ const getListenerByPhone = async (phoneNumber) => {
     return result;
 }
 const updateListenerVerificationCode = async (phoneNumber, verificationCode, expireDate) => {
-    console.log(`preparing update params for listener ${phoneNumber}`);
+    console.log(`[updateListenerVerificationCode] preparing update params for listener ${phoneNumber}`);
     const updateExpression = "set code=:code, isActive= :isActive, expiresAt = :expiresAt";
     const expressionAttributeValues = {
         ":code": verificationCode,

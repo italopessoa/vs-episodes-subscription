@@ -32,7 +32,7 @@ exports.new_listener_handler = async (event) => {
                 var activationLink = null;
                 var activationLinkError = null;
                 console.log('start the request first');
-                await getActivationLink('italo', 'teste')
+                await getActivationLink(phone, 'teste')
                     .then(result => {
                         activationLink = result;
                     })
@@ -40,10 +40,9 @@ exports.new_listener_handler = async (event) => {
                         console.error(`Error doing the request for the event: ${err}`);
                         activationLinkError = err;
                     });
-                console.log('request completed ', activationLink.link);
                 console.log('trying to send sms with link: ', activationLink.link);
                 if (activationLink) {
-                    await sendNotificationMessage(record.dynamodb.Keys.phone.S, code);
+                    await sendNotificationMessage(record.dynamodb.Keys.phone.S, activationLink.link);
                 } else {
                     console.log(`activation link not sent to ${phone}, readon: ${activationLinkError}`)
                 }
@@ -79,9 +78,9 @@ exports.unsubscribe_handler = async (event) => {
         if (subscriptionArn) {
             await unsubscribe(result.Items[0].subscription);
         } else {
-            console.log("SUBSCRIPTION not found. skip unsubscription")
+            console.log("SUBSCRIPTION not found. skip unsubscription");
         }
-        await deleteItem(result.Items[0].phone)
+        await deleteItem(result.Items[0].phone);
         response = {
             statusCode: 200,
             headers: {

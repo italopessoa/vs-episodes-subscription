@@ -1,8 +1,8 @@
 const https = require('https')
 
-const bitly_group = "";
-const bitly_token = "";
-const apiUri = "";
+const bitly_group = process.env.BITLY_GROUP;
+const bitly_token = process.env.BITLY_TOKEN;
+const apiUri = process.env.API_URI;
 //https://stackoverflow.com/questions/47404325/aws-lambda-http-post-request-node-js
 const getActivationLink = (phone, code) => {
 
@@ -12,6 +12,7 @@ const getActivationLink = (phone, code) => {
         "long_url": `${apiUri}?phone=${phone}&code=${code}`
     };
 
+    console.log("GENERATE SHORT URL FOR ", data);
     return new Promise((resolve, reject) => {
         const options = {
             host: 'api-ssl.bitly.com',

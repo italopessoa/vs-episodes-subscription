@@ -1,13 +1,12 @@
 var AWS = require("aws-sdk");
 var sns = new AWS.SNS();
-const topicArn = "";
+const topicArn = process.env.SNS_TOPIC_ARN;
 
 //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SNS.html#publish-property
-const sendNotificationMessage = async (phoneNumber, verificationCode) => {
-    console.log(`send activation code (${verificationCode}) to new listener "${phoneNumber}"`);
+const sendNotificationMessage = async (phoneNumber, activationLink) => {
+    console.log(`send activation link (${activationLink}) to new listener "${phoneNumber}"`);
     var params = {
-        Message: `Ola, obrigado por se inscrever nas notificacoes do Viking do Sertao. Para terminar seus cadastro utilize este codigo basta clicar neste link: http://www.algumacoisa.com/${phoneNumber}/confirmation/${verificationCode}. Este link ira expirar em 15 minutos.`, /* required */
-
+        Message: `Ola, obrigado por se inscrever nas notificacoes do Viking do Sertao. Para terminar seus cadastro utilize este codigo basta clicar neste link: ${activationLink}.`, /* required */
         PhoneNumber: phoneNumber,
         Subject: 'Bem vindo ao Viking do Sertao'
     };
