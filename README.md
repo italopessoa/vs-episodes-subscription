@@ -1,6 +1,6 @@
 # Viking do Sertao - Episodes subscription
 
-- [ ] API Gateway
+- [x] API Gateway
     - [x] Subscribe using phone number
         - [x] Validate phone number format
         - [x] Integrate with DynamoDB table (PutItem) and create new item
