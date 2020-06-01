@@ -1,6 +1,6 @@
 const { sendNotificationMessage, subscribe, unsubscribe } = require('./shared/sns');
 const { updateListenerVerificationCode, deleteItem, getListenerByPhone, updateListenerSubscription, getListenerByPhoneNCode } = require("./shared/dynamo");
-const { getActivationLink } = require('./shared/bitly');//only for confirm subscription
+const cors = process.env.CORS;
 
 const getExpireDate = () => {
     var currentDate = new Date();
@@ -8,7 +8,7 @@ const getExpireDate = () => {
     return currentDate;
 }
 
-const getCode = () => 'teste';//Math.random().toString(36).substr(2, 9);
+const getCode = () => 'teste';//Math.random().toString(36).substr(2, 6);
 
 exports.new_listener_handler = async (event) => {
     let response = {
@@ -32,20 +32,9 @@ exports.new_listener_handler = async (event) => {
                 var activationLink = null;
                 var activationLinkError = null;
                 console.log('start the request first');
-                await getActivationLink(phone, 'teste')
-                    .then(result => {
-                        activationLink = result;
-                    })
-                    .catch(err => {
-                        console.error(`Error doing the request for the event: ${err}`);
-                        activationLinkError = err;
-                    });
-                console.log('trying to send sms with link: ', activationLink.link);
-                if (activationLink) {
-                    await sendNotificationMessage(record.dynamodb.Keys.phone.S, activationLink.link);
-                } else {
-                    console.log(`activation link not sent to ${phone}, readon: ${activationLinkError}`)
-                }
+
+                console.log('trying to send sms with activation code: ', code);
+                await sendNotificationMessage(record.dynamodb.Keys.phone.S, code);
             } else {
                 console.log(`${record.eventName} != INSERT`);
             }
@@ -85,17 +74,19 @@ exports.unsubscribe_handler = async (event) => {
             statusCode: 200,
             headers: {
                 //https://stackoverflow.com/questions/35190615/api-gateway-cors-no-access-control-allow-origin-header
-                "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+                "Access-Control-Allow-Origin": `${cors}`, // Required for CORS support to work
             },
             body: JSON.stringify('Telefone removido!'),
         };
-        /*response.headers = {
-            Location: 'https://google.com',
-        }*/
     } else {
         console.log("item not found");
-        response.statusCode = 404;
-        response.body = JSON.stringify('Phone number not found')
+        response = {
+            headers: {
+                "Access-Control-Allow-Origin": `${cors}`, // Required for CORS support to work
+            },
+            statusCode: 404,
+            body: JSON.stringify('Phone number not found')
+        }
     }
 
     console.log(`========= FINISH UNSUBSCRIBE FLOW: ${JSON.stringify(response)}`);
@@ -105,21 +96,27 @@ exports.unsubscribe_handler = async (event) => {
 
 
 exports.confirm_subscription_handler = async (event) => {
-    const response = {};
+    let response = {};
     const { phone, code } = event.queryStringParameters;
     console.log(`========= START CONFIRMATION FLOW ${phone} and ${code}`);
     var result = await getListenerByPhoneNCode(phone, code);
     if (result && result.Items.length > 0) {
         console.log('phone number found');
-        let subscriptionArn = await subscribe(result.Items[0].phone);
+        let subscriptionArn = await subscribe(`+${result.Items[0].phone}`);
         await updateListenerSubscription(result.Items[0].phone, subscriptionArn);
-        response.statusCode = 301;
-        response.headers = {
-            Location: 'https://google.com',
-        };
+        response = {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": `${cors}`, // Required for CORS support to work
+            },
+            body: JSON.stringify("Phone number not found")
+        }
     } else {
         console.log("item not found");
         response.statusCode = 404;
+        response.headers = {
+            "Access-Control-Allow-Origin": `${cors}`, // Required for CORS support to work
+        };
         response.body = JSON.stringify("Phone number not found");
     }
 
