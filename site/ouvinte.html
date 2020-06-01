@@ -34,30 +34,43 @@
         <a class="navbar-brand font-weight-bold text-light" href="#">
             <img src="https://s3-us-west-2.amazonaws.com/anchor-generated-image-bank/production/podcast_uploaded_nologo400/3061660/3061660-1587919649940-1fd4c25832f7e.jpg"
                 width="30" height="30" alt="" loading="lazy">
-            Viking do Sertão</a>
+            Viking do Sertão - newsletter</a>
     </nav>
     <div class="container">
-        <form>
-            <div class="form-group">
+        <form autocomplete="off">
+            <div class="form-group" id="fg-phone">
                 <label for="phoneNumber">Telefone</label>
-                <input name="phoneNumber" type="tel" pattern="[0-9]{2}9[0-9]{8}" class="form-control"
+                <input name="phoneNumber" type="tel" pattern="[0-9]{2}9[0-9]{8}" maxlength="11" class="form-control"
                     id="phoneNumber" placeholder="88998762937" required>
+            </div>
+            <div class="form-group" style="display: none;" id="fg-activation-code">
+                <label for="activation-code">Código de confirmação</label>
+                <input name="activation-code" type="text" pattern="[0-9a-z]{6}" maxlength="6" class="form-control"
+                    id="activation-code" placeholder="codigo de confirmacao (s34xaw)">
             </div>
             <button type="submit" name="subscribe" class="btn btn-warning">
                 <span style="display: none;" class="spinner-border spinner-border-sm" role="status"
                     aria-hidden="true"></span>
-                Inscrever-se
+                Cadastrar
+            </button>
+            <button type="submit" name="validate-code" class="btn btn-success" style="display: none;">
+                <span style="display: none;" class="spinner-border spinner-border-sm" role="status"
+                    aria-hidden="true"></span>
+                Validar
             </button>
             <button type="submit" name="unsubscribe" class="btn btn-light">
                 <span style="display: none;" class="spinner-border spinner-border-sm" role="status"
                     aria-hidden="true"></span>
-                Cancelar inscrição</button>
+                Apagar número</button>
+            <input class="btn btn-danger" type="reset" value="Cancelar">
+
         </form>
 
         <br />
         <div id="success" class="alert alert-success alert-dismissible" role="alert" style="display: none;">
             <h4 class="alert-heading">Show!</h4>
-            <p>Muito bem, seu telefone foi cadastrado Você vai receber uma mensagem com um link pra ativação.</p>
+            <p>Muito bem, seu telefone foi cadastrado. Você vai receber uma mensagem com um código pra ativação. NÃO
+                atualiza a página, só copia o código.</p>
             <hr>
             <p class="mb-0">Se não der certo vai ter que entrar em contato comigo caso queira receber as mensagens.</p>
             <button type="button" class="close" aria-label="Close">
@@ -71,9 +84,16 @@
                 <span aria-hidden="true">&times;</span>
             </button>
         </div>
+        <div id="activationSuccess" class="alert alert-success alert-dismissible" role="alert" style="display: none;">
+            <h4 class="alert-heading">Sucesso!</h4>
+            <p>Se garantiu. Seu telefone foi ativado.</p>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
         <div id="error" class="alert alert-danger alert-dismissible" role="alert" style="display: none;">
-            <h4 class="alert-heading">Inferno!</h4>
-            <p>Deu erro em alguma coisa, não sei o que foi. Fala comigo pra eu tentar resolver.</p>
+            <h4 class="alert-heading">Carai!</h4>
+            <p id="errorMessage"></p>
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
@@ -89,60 +109,156 @@
         crossorigin="anonymous"></script>
 
     <script type="text/javascript">
-        var buttonsState = false;
-        function toggleButtons() {
-
-            if (buttonsState) {
-                $('.spinner-border.spinner-border-sm').hide();
-            } else {
-                $('.spinner-border.spinner-border-sm').show();
+        const defaulErrorMessage = "Deu erro em alguma coisa, não sei o que foi. Fala comigo pra eu tentar resolver. Vlw Flw :)";
+        var requestTemplate = () => ({
+            url: "",
+            method: "",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": ""
             }
+        });
 
-            buttonsState = !buttonsState;
-            $('button').prop('disabled', buttonsState);
+
+        var btnSubscribe = $('button[name=subscribe]');
+        var btnUnsubscribe = $('button[name=unsubscribe]');
+        var btnValidateCode = $('button[name=validate-code]');
+        var btnCancel = $('input[type=reset]');
+        var formGroupActivationCode = $('#fg-activation-code');
+
+        var buttonsState = false;
+        var states = {
+            subscribe: "sub",
+            activation: "activate",
+            cancel: "cancel",
+            unsubscribe: 'unsub'
+        };
+
+        var state = '';
+
+        function ajaxRequest(settings, successCallback, errorCallback) {
+            $.ajax({
+                ...settings,
+                success: function (data, text) {
+                    successCallback(data, text);
+                },
+                error: function (request, status, error) {
+                    errorCallback(request, status, error);
+                }
+            });
+        }
+
+        function toggleActivation(active) {
+            if (active) {
+                btnSubscribe.hide();
+                btnValidateCode.show();
+                formGroupActivationCode.show();
+            } else {
+                btnSubscribe.show();
+                btnValidateCode.hide();
+                formGroupActivationCode.hide();
+            }
         }
 
         function hideAllMessages() {
             $("#success").hide();
             $("#error").hide();
             $("#unsubSuccess").hide();
+            $("#activationSuccess").hide();
+            $("#errorMessage").text(defaulErrorMessage);
         }
 
-        var newSubscription = true;
-        function manageSubscription(phoneNumber) {
-            toggleButtons();
+        function toggleButtons(loading) {
+            if (!loading) {
+                $('.spinner-border.spinner-border-sm').hide();
+                btnCancel.show();
+            } else {
+                btnCancel.hide();
+                $('.spinner-border.spinner-border-sm').show();
+            }
+            $('button').prop('disabled', loading);
+        }
 
-            var settings = {
-                "url": "",
-                "method": newSubscription ? 'POST' : 'DELETE',
-                "timeout": 0,
-                "headers": {
-                    "Content-Type": "application/json"
+        function reset() {
+            hideAllMessages();
+            toggleButtons(false);
+            $('button').prop('disabled', false);
+            $('input').prop('disabled', false);
+            $('input').text('');
+            $('input[type=tel]').prop('value', '')
+            toggleActivation();
+        }
+
+
+        function activateSubscription(phone, code) {
+            hideAllMessages();
+            toggleButtons(true);
+
+            var settings = requestTemplate();
+            settings.method = 'GET';
+            settings.url = `${settings.url}?phone=55${phone}&code=${code}`;
+
+            ajaxRequest(
+                settings,
+                function (data, text) {
+                    reset();
+                    $("#activationSuccess").show();
                 },
-                "data": JSON.stringify({ "phone": `55${phoneNumber}` }),
-            };
+                function (request, status, error) {
+                    console.log("teste ", request)
+                    if (request.responseJSON) {
+                        $("#errorMessage").text(request.responseJSON);
+                    } else {
+                        $("#errorMessage").text(defaulErrorMessage);
+                    }
+                    $("#error").show();
+                    toggleButtons(false);
+                }
+            );
+        }
+
+        function manageSubscription(phoneNumber) {
+            toggleButtons(true);
+
+            const newSubscription = (state == states.subscribe);
+            var settings = requestTemplate();
+            settings.method = newSubscription ? 'POST' : 'DELETE';
+            settings.data = JSON.stringify({ "phone": `55${phoneNumber}` });
 
             hideAllMessages();
 
-            $.ajax({
-                ...settings,
-                success: function (data, text) {
+            ajaxRequest(
+                settings,
+                function (data, text) {
                     if (newSubscription) {
                         $("#success").show();
+                        $('#phoneNumber').prop('disabled', true);
+                        toggleActivation(true);
                     } else {
+                        reset();
                         $("#unsubSuccess").show();
                     }
-                    toggleButtons();
+                    toggleButtons(false);
                 },
-                error: function (request, status, error) {
+                function (request, status, error) {
+                    if (request.responseJSON) {
+                        $("#errorMessage").text(request.responseJSON);
+                    } else {
+                        $("#errorMessage").text(defaulErrorMessage);
+                    }
                     $("#error").show();
-                    toggleButtons();
+                    toggleButtons(false);
                 }
-            });
+            );
         }
 
         $(document).ready(function () {
             hideAllMessages();
+
+            console.log('%cNÃO!', 'color: white; font-size: 30px; font-weight: bold; background-color: rgb(22, 155, 98);');
+            console.log('%cSE não for ajudar para de futricar!', 'color: green; font-size: 30px; font-weight: bold;background-color: white;');
+            console.log('%cvai ouvir um podcast que tem mais futuro https://open.spotify.com/show/28a6axN3Nv93ybRwvoEHjg', 'color: black; font-size: 20px; font-weight: bold;background-color: #ff873e;');
+            console.log('https://github.com/italopessoa/vs-episodes-subscription');
 
             //set alert to hide instead of delete element
             $(".close").on("click", function (e) {
@@ -151,11 +267,19 @@
 
             $('form').submit(function (e, x, z) {
                 e.preventDefault();
-                manageSubscription(e.target.elements['phoneNumber'].value);
+                if (state == states.subscribe || state == states.unsubscribe) {
+                    manageSubscription(e.target.elements['phoneNumber'].value);
+                } else if (state == states.activation) {
+                    activateSubscription(e.target.elements['phoneNumber'].value, e.target.elements['activation-code'].value);
+                } else {
+
+                }
             });
 
-            $('button[name=subscribe]').click(function () { newSubscription = true; });
-            $('button[name=unsubscribe]').click(function () { newSubscription = false; });
+            btnSubscribe.click(function () { state = states.subscribe; });
+            btnUnsubscribe.click(function () { state = states.unsubscribe; });
+            btnValidateCode.click(function () { state = states.activation; });
+            btnCancel.click(function () { reset() });
         });
     </script>
 </body>
