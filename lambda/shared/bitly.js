@@ -4,15 +4,15 @@ const bitly_group = process.env.BITLY_GROUP;
 const bitly_token = process.env.BITLY_TOKEN;
 const apiUri = process.env.API_URI;
 //https://stackoverflow.com/questions/47404325/aws-lambda-http-post-request-node-js
-const getActivationLink = (phone, code) => {
+const getShortLink = (link) => {
 
     const data = {
         "group_guid": bitly_group,
         "domain": "bit.ly",
-        "long_url": `${apiUri}?phone=${phone}&code=${code}`
+        "long_url": link
     };
 
-    console.log("GENERATE SHORT URL FOR ", data);
+    console.log("[getShortLink] GENERATE SHORT URL FOR ", data);
     return new Promise((resolve, reject) => {
         const options = {
             host: 'api-ssl.bitly.com',
@@ -46,4 +46,4 @@ const getActivationLink = (phone, code) => {
 };
 
 
-exports.getActivationLink = getActivationLink;
+exports.getShortLink = getShortLink;

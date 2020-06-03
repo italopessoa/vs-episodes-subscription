@@ -8,7 +8,7 @@ const getExpireDate = () => {
     return currentDate;
 }
 
-const getCode = () => 'teste';//Math.random().toString(36).substr(2, 6);
+const getCode = () => Math.random().toString(36).substr(2, 6);
 
 exports.new_listener_handler = async (event) => {
     let response = {
@@ -17,24 +17,22 @@ exports.new_listener_handler = async (event) => {
     };
 
 
-    console.log(`========= START SUBSCRIPTION FLOW`);
     try {
 
         for (var i = 0; i < event.Records.length; i++) {
             const record = event.Records[i];
             if (record.eventName === "INSERT") {
+                console.log(`========= START SUBSCRIPTION FLOW`);
                 const phone = record.dynamodb.Keys.phone.S
                 console.log(`I (${phone}) want to listen to your podcast`);
                 const code = getCode();
                 console.log(`Use the code "${code}" to confirm you are not a machine`);
                 await updateListenerVerificationCode(phone, code, getExpireDate().getTime());
 
-                var activationLink = null;
-                var activationLinkError = null;
-                console.log('start the request first');
-
-                console.log('trying to send sms with activation code: ', code);
-                await sendNotificationMessage(record.dynamodb.Keys.phone.S, code);
+                console.log(`trying to send sms to ${record.dynamodb.Keys.phone.S} with activation code: ${code}`);
+                await sendNotificationMessage(`+${record.dynamodb.Keys.phone.S}`, code);
+                //await sendNotificationMessage(record.dynamodb.Keys.phone.S, code);
+                console.log(`========= FINISH SUBSCRIPTION FLOW ${JSON.stringify(response)}`);
             } else {
                 console.log(`${record.eventName} != INSERT`);
             }
@@ -47,7 +45,6 @@ exports.new_listener_handler = async (event) => {
             body: JSON.stringify('Oops, deu algo errado :)'),
         };
     }
-    console.log(`========= FINISH SUBSCRIPTION FLOW ${JSON.stringify(response)}`);
 
     return response;
 };

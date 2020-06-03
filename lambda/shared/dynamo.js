@@ -22,7 +22,7 @@ const updateListenerSubscription = async (phoneNumber, subscriptionArn) => {
     const expressionAttributeValues = {
         ":subscription": subscriptionArn
     }
-    console.log("config update subscription params");
+    console.log("[updateListenerSubscription] config update subscription params");
     try {
         console.log("sending update susbscription request");
         await updateListenerItem(phoneNumber, updateExpression, expressionAttributeValues);
@@ -33,7 +33,7 @@ const updateListenerSubscription = async (phoneNumber, subscriptionArn) => {
 }
 
 const getListenerByPhoneNCode = async (phoneNumber, code) => {
-    console.log("set QUERY request params PHONE+CODE");
+    console.log("[getListenerByPhoneNCode] set QUERY request params PHONE+CODE");
     var params = {
         TableName: table,
         KeyConditionExpression: "#italo = :phone",
@@ -54,7 +54,7 @@ const getListenerByPhoneNCode = async (phoneNumber, code) => {
 }
 
 const getListenerByPhone = async (phoneNumber) => {
-    console.log("set QUERY request params");
+    console.log("[getListenerByPhone] set QUERY request params");
     var params = {
         TableName: table,
         KeyConditionExpression: "phone = :phone",
@@ -81,7 +81,7 @@ const updateListenerVerificationCode = async (phoneNumber, verificationCode, exp
 }
 
 const deleteItem = async (phone) => {
-    console.log("set DELETE request params");
+    console.log("[deleteItem] set DELETE request params");
     let params = {
         Key: {
             "phone": phone
