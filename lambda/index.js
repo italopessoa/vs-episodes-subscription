@@ -1,6 +1,13 @@
-const { sendNotificationMessage, subscribe, unsubscribe } = require('./shared/sns');
+const { publishSNSMessage, subscribe, unsubscribe } = require('./shared/sns');
 const { updateListenerVerificationCode, deleteItem, getListenerByPhone, updateListenerSubscription, getListenerByPhoneNCode } = require("./shared/dynamo");
+const { shouldPublishNewEpisode } = require('./shared/rss');
+const { getShortLink } = require('./shared/bitly');
+let Parser = require('rss-parser');
+let parser = new Parser();
+
+
 const cors = process.env.CORS;
+const newsletterTopic = process.env.NEWSLETTER_TOPIC_ARN;
 
 const getExpireDate = () => {
     var currentDate = new Date();
@@ -30,8 +37,16 @@ exports.new_listener_handler = async (event) => {
                 await updateListenerVerificationCode(phone, code, getExpireDate().getTime());
 
                 console.log(`trying to send sms to ${record.dynamodb.Keys.phone.S} with activation code: ${code}`);
-                await sendNotificationMessage(`+${record.dynamodb.Keys.phone.S}`, code);
-                //await sendNotificationMessage(record.dynamodb.Keys.phone.S, code);
+
+                var params = {
+                    Message: `Seu código de ativação no Viking do Sertão é: ${code}.`, /* required */
+                    PhoneNumber: phone,
+                    Subject: 'Bem vindo ao Viking do Sertão'
+                };
+
+                await publishSNSMessage(params);
+
+
                 console.log(`========= FINISH SUBSCRIPTION FLOW ${JSON.stringify(response)}`);
             } else {
                 console.log(`${record.eventName} != INSERT`);
@@ -62,7 +77,7 @@ exports.unsubscribe_handler = async (event) => {
         console.log('phone number found');
         let subscriptionArn = result.Items[0].subscription;
         if (subscriptionArn) {
-            await unsubscribe(result.Items[0].subscription);
+            await unsubscribe(result.Items[0].subscription, phone);
         } else {
             console.log("SUBSCRIPTION not found. skip unsubscription");
         }
@@ -118,6 +133,48 @@ exports.confirm_subscription_handler = async (event) => {
     }
 
     console.log(`========= FINISH CONFIRMATION FLOW ${JSON.stringify(response)}`);
+
+    return response;
+};
+
+exports.handler_feed_spy = async (event) => {
+    let response = {
+        statusCode: 200,
+        body: JSON.stringify('OK')
+    }
+
+    let feed = await parser.parseURL('https://anchor.fm/s/12d84f70/podcast/rss');
+    const lastEpisode = feed.items.length - 1;
+
+    console.info(`[handler_feed_spy] check if the episode ${lastEpisode} is the latest one`);
+    if (await shouldPublishNewEpisode(lastEpisode)) {
+        console.log('[handler_feed_spy] get short ling before publish new episode');
+        var link = null;
+        await getShortLink(feed.items[0].link)
+            .then(result => {
+                console.log(`[handler_feed_spy] short link created`);
+                console.log(result.link)
+                link = result.link;
+            })
+            .catch(err => {
+                console.error(`[handler_feed_spy] error when requesting short link: ${err}`);
+            });
+
+        if (link) {
+            var params = {
+                Message: `Já ouviu o último episódio do Viking do Sertão? Vai lá e confere ${link}`,
+                Subject: 'Viking do Sertão',
+                TopicArn: newsletterTopic
+            };
+            await publishSNSMessage(params);
+        } else {
+            console.log("[handler_feed_spy] short link not created = episode not published on sns")
+        }
+
+
+    } else {
+        console.log('[handler_feed_spy] no updates');
+    }
 
     return response;
 };

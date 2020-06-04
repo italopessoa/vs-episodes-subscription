@@ -1,0 +1,14 @@
+{
+  "name": "rss-parser-layer",
+  "version": "1.0.0",
+  "description": "rss layer to use on vs lambda functions",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "rss-parser": "^3.8.0"
+  }
+}

@@ -1,27 +1,55 @@
 var AWS = require("aws-sdk");
-var sns = new AWS.SNS({region: process.env.SNS_REGION});
-const topicArn = process.env.SNS_TOPIC_ARN;
+var sns = new AWS.SNS({ region: process.env.SNS_REGION });
+
+const newsletterTopic = process.env.NEWSLETTER_TOPIC_ARN;
+const notificationTopic = process.env.NOTIFICATION_TOPIC_ARN;
+const snsActive = process.env.ENABLE_SNS;
+const smsNumber = process.env.TEST_SMS;
+
+
+const publish = async (params) => {
+    try {
+        if (snsActive) {
+            await sns.publish(params).promise();
+            console.log("[publish] message successfully published: ", params);
+        } else {
+            console.log("[publish] SNS inactive");
+        }
+    } catch (error) {
+        console.log("[publish] error when trying to send message: ", params);
+        console.log(error); // an error occurred
+    }
+}
+
+
+const notifySubscription = async (message, subject) => {
+    if (notificationTopic) {
+        var params = {
+            Message: message,
+            TopicArn: notificationTopic,
+            Subject: subject
+        };
+        console.log(`[notifySubscription] sending notification to ${notificationTopic}`);
+        await publish(params);
+    } else {
+        console.log('[notifySubscription] NOTIFICATION_TOPIC_ARN not configured');
+    }
+}
+
 
 //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SNS.html#publish-property
-const sendNotificationMessage = async (phoneNumber, activationCode) => {
-    console.log(`[sendNotificationMessage] send activation code (${activationCode}) to new listener "${phoneNumber}"`);
-    var params = {
-        Message: `Seu código de ativação no Viking do Sertão é: ${activationCode}.`, /* required */
-        PhoneNumber: '+353830784099',//phoneNumber,
-        Subject: 'Bem vindo ao Viking do Sertão'
-    };
-    console.log('publish SMS');
-    sns.publish(params, function (err, data) {
-        if (err) {
-            console.log("error when trying to send SMS message with activation code");
-            console.log(err, err.stack); // an error occurred
+const publishSNSMessage = async (params) => {
+    if (params.PhoneNumber && params.TopicArn) {
+        console.log("[publishSNSMessage] messages must be sent to PhoneNumber or sns TopicArn");
+    } else if (params.PhoneNumber || params.TopicArn) {
+        console.log("[publishSNSMessage] trying to publish message: ", params);
+        if (smsNumber && params.PhoneNumber) {
+            params.PhoneNumber = smsNumber;
         }
-        else {
-            console.log("SMS message with activation code successfully delivered");
-            console.log(data);           // successful response
-        }
-    });
-
+        await publish(params);
+    } else {
+        console.log("[publishSNSMessage] message not published: ", params);
+    }
 }
 
 
@@ -30,13 +58,14 @@ const subscribe = async (phoneNumber) => {
     console.log("[subscribe] config subscription request params");
     var params = {
         Protocol: 'sms',
-        TopicArn: topicArn,
+        TopicArn: newsletterTopic,
         Endpoint: phoneNumber,
         ReturnSubscriptionArn: true
     };
 
     console.log("sending SNS subscribe request")
     let subscriptionResult = await sns.subscribe(params).promise();
+    await notifySubscription(`Um novo ouvinte se cadastrou nas notificações ${phoneNumber}`, '🤓 [LAMPIÃO] Você tem um novo ouvinte 😎😄');
     console.log("SNS subscribe request completed");
 
     return subscriptionResult.SubscriptionArn;
@@ -48,12 +77,12 @@ const unsubscribe = async (subscriptionArn) => {
     var params = {
         SubscriptionArn: subscriptionArn
     };
-    console.log("send UNSUBSCRIBE request to SNS: ", subscriptionArn);
+    console.log("[unsubscribe] send UNSUBSCRIBE request to SNS: ", subscriptionArn);
     var result = await sns.unsubscribe(params).promise();
-    console.log("UNSUBSCRIBE request completed ", JSON.stringify(result));
+    await notifySubscription('Alguém decidiu deixar de receber as notificações.', '🤓 [LAMPIÃO] Pelo menos você vai economizar nas notificações 😥🤷‍♂️');
+    console.log("[unsubscribe] UNSUBSCRIBE request completed ", JSON.stringify(result));
 };
 
-exports.sendNotificationMessage = sendNotificationMessage;
 exports.subscribe = subscribe;
 exports.unsubscribe = unsubscribe;
-
+exports.publishSNSMessage = publishSNSMessage;
