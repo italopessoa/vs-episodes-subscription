@@ -2,6 +2,7 @@ const { publishSNSMessage, subscribe, unsubscribe } = require('./shared/sns');
 const { updateListenerVerificationCode, deleteItem, getListenerByPhone, updateListenerSubscription, getListenerByPhoneNCode } = require("./shared/dynamo");
 const { shouldPublishNewEpisode } = require('./shared/rss');
 const { getShortLink } = require('./shared/bitly');
+const { updateTStatus } = require('./shared/twitter')
 let Parser = require('rss-parser');
 let parser = new Parser();
 
@@ -63,8 +64,6 @@ exports.new_listener_handler = async (event) => {
 
     return response;
 };
-
-
 
 exports.unsubscribe_handler = async (event) => {
     let response = {};
@@ -147,7 +146,9 @@ exports.handler_feed_spy = async (event) => {
     const lastEpisode = feed.items.length - 1;
 
     console.info(`[handler_feed_spy] check if the episode ${lastEpisode} is the latest one`);
+
     if (await shouldPublishNewEpisode(lastEpisode)) {
+
         console.log('[handler_feed_spy] get short ling before publish new episode');
         var link = null;
         await getShortLink(feed.items[0].link)
@@ -167,10 +168,17 @@ exports.handler_feed_spy = async (event) => {
                 TopicArn: newsletterTopic
             };
             await publishSNSMessage(params);
+            await updateTStatus(link)
+                .then(result => {
+                    console.log('[handler_feed_spy] new episode published on twitter');
+                    console.log(result);
+                })
+                .catch(err => {
+                    console.error(`[handler_feed_spy] error when publishing on twitter: ${err}`);
+                });
         } else {
             console.log("[handler_feed_spy] short link not created = episode not published on sns")
         }
-
 
     } else {
         console.log('[handler_feed_spy] no updates');
