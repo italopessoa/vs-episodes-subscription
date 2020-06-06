@@ -6,11 +6,11 @@
         - [x] Integrate with DynamoDB table (PutItem) and create new item
     - [x] Enpoint to receive subscription confirmation code
     - [x] Enpoint to remove subscription (DeleteItem)
-- [ ] Lambda
+- [x] Lambda
     - [x] DynamoDB trigger
         - [x] Generate unique code and send an SMS message (SNS publish) to confirm subscription
     - [x] Receive subscription confirmation (API Gatweway). Subscribe phone number to (SNS topic)
-    - [ ] Using (CloudWatch events) check podcast rss for new spisodes and publish message to SNS. 
+    - [x] Using (CloudWatch events) check podcast rss for new spisodes and publish message to SNS. 
 
 
 ---
