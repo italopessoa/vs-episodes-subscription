@@ -87,7 +87,7 @@ const updateTStatus = (status) => new Promise((resolve, reject) => {
     getTrendHashtag().then(trend => {
         console.log('[updateTStatus] updating feed with last episode');
 
-        twitte(`Já ouviu o último episódio do 🇮🇪Vinking no Sertão 🌵? Corre lá e escuta ${status} #podcast #podcasting #spotify #radio #music #podcaster ${trend}`)
+        twitte(`Já ouviu o último episódio do 🇮🇪Viking no Sertão 🌵? Corre lá e escuta ${status} #podcast #podcasting #spotify #radio #music #podcaster ${trend}`)
             .then(result => {
                 setTimeout(function () {
                     console.log('[updateTStatus] sending reploy to twitter: ', result.id_str)
