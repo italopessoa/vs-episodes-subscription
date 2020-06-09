@@ -65,7 +65,7 @@ const subscribe = async (phoneNumber) => {
 
     console.log("sending SNS subscribe request")
     let subscriptionResult = await sns.subscribe(params).promise();
-    await notifySubscription(`Um novo ouvinte se cadastrou nas notificações ${phoneNumber}`, '🤓 [LAMPIÃO] Você tem um novo ouvinte 😎😄');
+    await notifySubscription(`Um novo ouvinte se cadastrou nas notificações`, '🤓 [LAMPIÃO] Você tem um novo ouvinte 😎😄');
     console.log("SNS subscribe request completed");
 
     return subscriptionResult.SubscriptionArn;
